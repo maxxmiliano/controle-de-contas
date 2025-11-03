@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Meu Rendimento Driver</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <header>
+        <h1>💰 Meu Rendimento Driver</h1>
+    </header>
+
+
+    <main>
+        <section class="registro">
+            <h2>Registrar Ganho</h2>
+            <input type="number" id="valorGanho" placeholder="Valor do ganho (R$)" />
+            <button onclick="adicionarGanho()">Adicionar Ganho</button>
+        </section>
+
+
+        <section class="registro">
+            <h2>Registrar Gasto</h2>
+            <input type="number" id="valorGasto" placeholder="Valor do gasto (R$)" />
+            <input type="text" id="descricaoGasto" placeholder="Descrição (ex: combustível)" />
+            <button onclick="adicionarGasto()">Adicionar Gasto</button>
+        </section>
+
+
+        <section class="registro">
+            <h2>Minhas Contas</h2>
+            <input type="text" id="nomeConta" placeholder="Nome da conta" />
+            <input type="number" id="valorConta" placeholder="Valor da conta (R$)" />
+            <input type="date" id="vencimentoConta" />
+            <button onclick="adicionarConta()">Adicionar Conta</button>
+        </section>
+
+
+        <div class="saldo" id="saldoAtual">Saldo atual: R$ 0,00</div>
+
+
+        <section class="lista">
+            <h2>Histórico</h2>
+            <ul id="listaRegistros"></ul>
+        </section>
+
+
+        <section class="lista">
+            <h2>Contas</h2>
+            <ul id="listaContas"></ul>
+        </section>
+    </main>
+
+
+    <script src="src/script.js"></script>
+</body>
+
+</html>

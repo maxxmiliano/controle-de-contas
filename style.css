@@ -1,0 +1,55 @@
+
+
+/* style.css */
+body {
+font-family: Arial, sans-serif;
+background: #ffffff;
+margin: 0;
+padding: 0;
+}
+header {
+background-color: #0273c5;
+color: rgb(0, 0, 0);
+text-align: center;
+padding: 1rem;
+}
+main {
+padding: 1rem;
+max-width: 600px;
+margin: auto;
+background: rgb(249, 248, 248);
+border-radius: 10px;
+box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+h2 {
+border-bottom: 2px solid #0077cc;
+padding-bottom: 5px;
+}
+input, button, select {
+width: 100%;
+padding: 10px;
+margin: 5px 0;
+border-radius: 5px;
+border: 1px solid #8d8585;
+font-size: 1rem;
+ box-sizing: border-box;
+}
+button {
+ 
+background-color: #0077cc;
+color: white;
+border: none;
+cursor: pointer;
+}
+button:hover {
+background-color: #005fa3;
+}
+.registro {
+margin-bottom: 1rem;
+}
+.lista {
+margin-top: 1rem;
+}
+.saldo {
+font-size: 1.2rem;
+}
