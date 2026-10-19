@@ -1,13 +1,14 @@
 // sw.js — faz o app abrir e funcionar sem internet.
-// Ao mudar arquivos do app, aumente a VERSAO para os celulares baixarem a versão nova.
-const VERSAO = 'v2';
-const CACHE = 'meu-rendimento-' + VERSAO;
+// Regra: com internet, sempre busca a versão mais nova; sem internet, usa a cópia salva.
+// Ao mudar o app, aumente a VERSAO aqui E o ?v= dos arquivos no index.html (mesmo número).
+const VERSAO = '3';
+const CACHE = 'meu-rendimento-v' + VERSAO;
 
 const ARQUIVOS = [
   './',
   './index.html',
-  './style.css',
-  './src/script.js',
+  './style.css?v=' + VERSAO,
+  './src/script.js?v=' + VERSAO,
   './manifest.json',
   './icons/icon-192.png',
   './icons/icon-512.png',
@@ -15,7 +16,10 @@ const ARQUIVOS = [
 ];
 
 self.addEventListener('install', evento => {
-  evento.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ARQUIVOS)));
+  // cache: 'reload' ignora a cópia que o navegador já tinha, garantindo arquivos novos
+  evento.waitUntil(
+    caches.open(CACHE).then(cache => cache.addAll(ARQUIVOS.map(u => new Request(u, { cache: 'reload' }))))
+  );
   self.skipWaiting();
 });
 
@@ -33,26 +37,22 @@ self.addEventListener('fetch', evento => {
   const url = new URL(req.url);
   const mesmoSite = url.origin === self.location.origin;
   const fonte = url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com';
-  if (!mesmoSite && !fonte) return;
 
-  // Página: tenta a internet primeiro (para pegar atualizações); sem internet, usa a cópia salva.
-  if (req.mode === 'navigate') {
+  // Fontes do Google: quase nunca mudam, então a cópia salva vale primeiro
+  if (fonte) {
     evento.respondWith(
-      fetch(req)
-        .then(resp => { guardar('./index.html', resp.clone()); return resp; })
-        .catch(() => caches.match('./index.html'))
+      caches.match(req).then(salvo => salvo || fetch(req).then(resp => { guardar(req, resp.clone()); return resp; }))
     );
     return;
   }
+  if (!mesmoSite) return;
 
-  // Demais arquivos: responde na hora com a cópia salva e atualiza em segundo plano.
+  // Arquivos do app: internet primeiro (sem usar cópia antiga do navegador); sem internet, cópia salva
+  const chave = req.mode === 'navigate' ? './index.html' : req;
   evento.respondWith(
-    caches.match(req).then(salvo => {
-      const daRede = fetch(req)
-        .then(resp => { if (resp.ok || resp.type === 'opaque') guardar(req, resp.clone()); return resp; })
-        .catch(() => salvo);
-      return salvo || daRede;
-    })
+    fetch(req, { cache: 'no-cache' })
+      .then(resp => { if (resp.ok) guardar(chave, resp.clone()); return resp; })
+      .catch(() => caches.match(chave).then(salvo => salvo || caches.match('./index.html')))
   );
 });
 

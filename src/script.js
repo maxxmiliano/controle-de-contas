@@ -593,7 +593,25 @@ function mostrarAviso(texto) {
 
 // ===== Instalação como app =====
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  // Quando uma versão nova do app assume, recarrega uma vez para já mostrar a novidade
+  const tinhaVersaoAnterior = !!navigator.serviceWorker.controller;
+  let recarregou = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!tinhaVersaoAnterior || recarregou) return;
+    recarregou = true;
+    window.location.reload();
+  });
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' })
+      .then(reg => reg.update())
+      .catch(() => {});
+  });
+  // Ao voltar para o app (ele fica aberto em segundo plano), procura atualização
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      navigator.serviceWorker.getRegistration().then(reg => reg && reg.update()).catch(() => {});
+    }
+  });
 }
 
 (function () {
