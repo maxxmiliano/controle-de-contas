@@ -1,6 +1,6 @@
 // sw.js — faz o app abrir e funcionar sem internet.
 // Ao mudar arquivos do app, aumente a VERSAO para os celulares baixarem a versão nova.
-const VERSAO = 'v1';
+const VERSAO = 'v2';
 const CACHE = 'meu-rendimento-' + VERSAO;
 
 const ARQUIVOS = [

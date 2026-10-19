@@ -224,6 +224,7 @@ function atualizarTela() {
   if (!abertas.length) vazio(proximas, 'Nenhuma conta em aberto 🎉');
   abertas.slice(0, 3).forEach(c => proximas.append(itemConta(c)));
 
+  renderResumo();
   salvar();
 }
 
@@ -345,6 +346,226 @@ folha.addEventListener('submit', e => {
 document.getElementById('cancelar').addEventListener('click', fecharFolha);
 fundo.addEventListener('click', fecharFolha);
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !folha.hidden) fecharFolha(); });
+
+// ===== Resumo da semana / mês =====
+const resumo = { periodo: 'semana', deslocamento: 0, metrica: 'lucro', selecionado: null };
+const DIAS_SEMANA = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+const nomeMes = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' });
+const diaSemanaLongo = new Intl.DateTimeFormat('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' });
+
+function iso(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function curtoData(d) {
+  return dataCurta.format(d).replace('.', '');
+}
+
+// Semana de segunda a domingo; mês do dia 1 ao último dia
+function intervaloResumo() {
+  const hoje = lerData(hojeISO());
+  const dias = [];
+  let titulo, datas;
+  if (resumo.periodo === 'semana') {
+    const inicio = new Date(hoje);
+    inicio.setDate(hoje.getDate() - ((hoje.getDay() + 6) % 7) + resumo.deslocamento * 7);
+    for (let i = 0; i < 7; i++) { const d = new Date(inicio); d.setDate(inicio.getDate() + i); dias.push(d); }
+    titulo = resumo.deslocamento === 0 ? 'Esta semana' : resumo.deslocamento === -1 ? 'Semana passada' : 'Semana de ' + curtoData(dias[0]);
+    datas = curtoData(dias[0]) + ' – ' + curtoData(dias[6]);
+  } else {
+    const inicio = new Date(hoje.getFullYear(), hoje.getMonth() + resumo.deslocamento, 1);
+    const ultimo = new Date(inicio.getFullYear(), inicio.getMonth() + 1, 0).getDate();
+    for (let i = 1; i <= ultimo; i++) dias.push(new Date(inicio.getFullYear(), inicio.getMonth(), i));
+    const nome = nomeMes.format(inicio);
+    titulo = resumo.deslocamento === 0 ? 'Este mês' : resumo.deslocamento === -1 ? 'Mês passado' : nome.charAt(0).toUpperCase() + nome.slice(1);
+    datas = nome.charAt(0).toUpperCase() + nome.slice(1);
+  }
+  return { dias, titulo, datas };
+}
+
+function renderResumo() {
+  const { dias, titulo, datas } = intervaloResumo();
+  const hoje = hojeISO();
+  const porDia = new Map(dias.map(d => [iso(d), { data: d, iso: iso(d), ganhos: 0, gastos: 0, km: 0, futuro: iso(d) > hoje }]));
+  const categorias = new Map();
+
+  registros.forEach(r => {
+    const dia = porDia.get(r.data);
+    if (!dia) return;
+    if (r.tipo === 'ganho') dia.ganhos += r.valor;
+    else {
+      dia.gastos += r.valor;
+      const cat = r.categoria || 'Sem categoria';
+      categorias.set(cat, (categorias.get(cat) || 0) + r.valor);
+    }
+  });
+  kms.forEach(k => { const dia = porDia.get(k.data); if (dia) dia.km += k.km; });
+
+  const lista = [...porDia.values()];
+  lista.forEach(d => { d.lucro = d.ganhos - d.gastos; d.rskm = d.km > 0 ? d.ganhos / d.km : 0; });
+  const ganhos = lista.reduce((s, d) => s + d.ganhos, 0);
+  const gastos = lista.reduce((s, d) => s + d.gastos, 0);
+  const km = lista.reduce((s, d) => s + d.km, 0);
+  const lucro = ganhos - gastos;
+  const diasTrab = lista.filter(d => d.ganhos > 0 || d.km > 0).length;
+
+  document.getElementById('periodoTitulo').textContent = titulo;
+  document.getElementById('periodoDatas').textContent = datas;
+  document.getElementById('periodoProximo').disabled = resumo.deslocamento >= 0;
+
+  const lucroEl = document.getElementById('resLucro');
+  lucroEl.textContent = moeda.format(lucro);
+  lucroEl.classList.toggle('negativo', lucro < 0);
+  document.getElementById('resGanhos').textContent = moeda.format(ganhos);
+  document.getElementById('resGastos').textContent = moeda.format(gastos);
+  document.getElementById('resKm').textContent = formatarKm(km);
+  document.getElementById('resRsKm').textContent = km > 0 ? moeda.format(ganhos / km) : '—';
+  document.getElementById('resDias').textContent = String(diasTrab);
+  const mediaEl = document.getElementById('resMedia');
+  mediaEl.textContent = diasTrab ? moeda.format(lucro / diasTrab) : '—';
+  mediaEl.classList.toggle('negativo', diasTrab > 0 && lucro < 0);
+
+  desenharGrafico(lista);
+
+  // Gastos por categoria
+  const ul = document.getElementById('resCategorias');
+  ul.replaceChildren();
+  const cats = [...categorias.entries()].sort((a, b) => b[1] - a[1]);
+  if (!cats.length) vazio(ul, 'Nenhum gasto neste período.');
+  cats.forEach(([nome, valor]) => {
+    const li = el('li', 'item');
+    const texto = el('div', 'item-texto');
+    texto.append(el('p', 'item-titulo', nome));
+    const pct = gastos ? valor / gastos * 100 : 0;
+    texto.append(el('p', 'item-sub', Math.round(pct) + '% dos gastos'));
+    const barra = el('div', 'cat-barra');
+    const preenchido = el('i');
+    preenchido.style.width = pct.toFixed(1) + '%';
+    barra.append(preenchido);
+    texto.append(barra);
+    li.append(texto);
+    li.append(el('span', 'item-valor gasto', moeda.format(valor)));
+    ul.append(li);
+  });
+}
+
+function svgEl(tag, attrs, texto) {
+  const e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  Object.entries(attrs).forEach(([k, v]) => e.setAttribute(k, v));
+  if (texto !== undefined) e.textContent = texto;
+  return e;
+}
+
+function textoMetrica(metrica, v) {
+  if (metrica === 'km') return formatarKm(v);
+  return moeda.format(v);
+}
+
+function rotuloCurto(metrica, v) {
+  if (metrica === 'km') return String(Math.round(v));
+  if (metrica === 'rskm') return v.toFixed(2).replace('.', ',');
+  return String(Math.round(v));
+}
+
+function desenharGrafico(lista) {
+  const svg = document.getElementById('grafico');
+  const detalhe = document.getElementById('graficoDetalhe');
+  const m = resumo.metrica;
+  svg.replaceChildren();
+
+  const W = 340, TOPO = 22, BASE = 160, ESQ = 4, LARG = 332;
+  const valores = lista.map(d => d[m]);
+  const maxV = Math.max(0, ...valores);
+  const minV = Math.min(0, ...valores);
+  const faixa = (maxV - minV) || 1;
+  const y = v => TOPO + (maxV - v) / faixa * (BASE - TOPO);
+  const n = lista.length;
+  const slot = LARG / n;
+  const largBarra = Math.max(3, slot * (n > 7 ? 0.7 : 0.56));
+  const cor = { lucro: null, km: 'var(--km)', rskm: 'var(--destaque)' }[m];
+
+  // linha do zero
+  svg.append(svgEl('line', { x1: ESQ, x2: W - ESQ, y1: y(0), y2: y(0), stroke: 'var(--borda)', 'stroke-width': 1 }));
+
+  if (!valores.some(v => v !== 0)) {
+    svg.append(svgEl('text', { x: W / 2, y: 95, 'text-anchor': 'middle', fill: 'var(--texto-suave)', 'font-size': 13, 'font-weight': 700 }, 'Sem lançamentos neste período'));
+    detalhe.textContent = '';
+    return;
+  }
+
+  lista.forEach((d, i) => {
+    const v = d[m];
+    const cx = ESQ + slot * i + slot / 2;
+    const topo = Math.min(y(v), y(0));
+    const altura = Math.max(Math.abs(y(v) - y(0)), v !== 0 ? 2 : 0);
+    const preenchimento = cor || (v < 0 ? 'var(--gasto)' : 'var(--ganho)');
+
+    // área de toque maior que a barra, para facilitar no celular
+    const toque = svgEl('rect', { x: ESQ + slot * i, y: TOPO - 10, width: slot, height: BASE - TOPO + 10, fill: 'transparent', class: 'barra' });
+    toque.addEventListener('click', () => { resumo.selecionado = d.iso; desenharGrafico(lista); });
+    svg.append(toque);
+
+    if (altura > 0) {
+      const barra = svgEl('rect', {
+        x: cx - largBarra / 2, y: topo, width: largBarra, height: altura,
+        rx: Math.min(4, largBarra / 2), fill: preenchimento,
+        class: 'barra' + (resumo.selecionado === d.iso ? ' selecionada' : ''),
+        'pointer-events': 'none'
+      });
+      svg.append(barra);
+    }
+
+    if (n <= 7 && v !== 0) {
+      svg.append(svgEl('text', {
+        x: cx, y: v < 0 ? topo + altura + 12 : topo - 5, 'text-anchor': 'middle',
+        fill: 'var(--texto)', 'font-size': 11, 'font-weight': 800, 'pointer-events': 'none'
+      }, rotuloCurto(m, v)));
+    }
+
+    const dia = d.data.getDate();
+    const mostrarRotulo = n <= 7 || dia === 1 || dia % 5 === 0;
+    if (mostrarRotulo) {
+      svg.append(svgEl('text', {
+        x: cx, y: 180, 'text-anchor': 'middle',
+        fill: d.iso === hojeISO() ? 'var(--destaque)' : 'var(--texto-suave)',
+        'font-size': 11, 'font-weight': 700, opacity: d.futuro ? 0.45 : 1, 'pointer-events': 'none'
+      }, n <= 7 ? DIAS_SEMANA[i] : String(dia)));
+    }
+  });
+
+  // Texto abaixo do gráfico: dia tocado, ou o melhor dia
+  let alvo = lista.find(d => d.iso === resumo.selecionado);
+  let prefixo = '';
+  if (!alvo) {
+    const comDados = lista.filter(d => d[m] !== 0);
+    alvo = comDados.reduce((a, b) => (b[m] > a[m] ? b : a), comDados[0]);
+    prefixo = 'Melhor dia: ';
+  }
+  detalhe.replaceChildren();
+  if (alvo) {
+    const nomeDia = diaSemanaLongo.format(alvo.data).replace(/\./g, '');
+    detalhe.append(prefixo + nomeDia + ' · ');
+    detalhe.append(el('b', '', textoMetrica(m, alvo[m]) + (m === 'rskm' ? '/km' : '')));
+    if (m !== 'km' && alvo.km) detalhe.append(' · ' + formatarKm(alvo.km));
+  }
+}
+
+document.querySelectorAll('[data-periodo]').forEach(b => b.addEventListener('click', () => {
+  resumo.periodo = b.dataset.periodo;
+  resumo.deslocamento = 0;
+  resumo.selecionado = null;
+  document.querySelectorAll('[data-periodo]').forEach(x => x.classList.toggle('ativo', x === b));
+  renderResumo();
+}));
+document.getElementById('periodoAnterior').addEventListener('click', () => { resumo.deslocamento--; resumo.selecionado = null; renderResumo(); });
+document.getElementById('periodoProximo').addEventListener('click', () => {
+  if (resumo.deslocamento < 0) { resumo.deslocamento++; resumo.selecionado = null; renderResumo(); }
+});
+document.querySelectorAll('[data-metrica]').forEach(b => b.addEventListener('click', () => {
+  resumo.metrica = b.dataset.metrica;
+  document.querySelectorAll('[data-metrica]').forEach(x => x.setAttribute('aria-checked', String(x === b)));
+  renderResumo();
+}));
 
 // ===== Navegação entre telas =====
 function irPara(tela) {

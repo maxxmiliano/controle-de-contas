@@ -107,6 +107,65 @@
             </section>
 
             <!-- ===== HISTÓRICO ===== -->
+            <!-- ===== RESUMO ===== -->
+            <section class="tela" id="tela-resumo">
+                <div class="seg" role="tablist" aria-label="Período do resumo">
+                    <button class="seg-item ativo" data-periodo="semana" role="tab">Semana</button>
+                    <button class="seg-item" data-periodo="mes" role="tab">Mês</button>
+                </div>
+
+                <div class="periodo">
+                    <button class="periodo-seta" id="periodoAnterior" aria-label="Período anterior">‹</button>
+                    <div class="periodo-texto">
+                        <strong id="periodoTitulo">Esta semana</strong>
+                        <span id="periodoDatas"></span>
+                    </div>
+                    <button class="periodo-seta" id="periodoProximo" aria-label="Próximo período">›</button>
+                </div>
+
+                <div class="card-saldo">
+                    <p class="rotulo">Lucro do período</p>
+                    <p class="saldo-valor" id="resLucro">R$ 0,00</p>
+                    <div class="saldo-linha">
+                        <div>
+                            <span class="ponto ponto-ganho"></span>
+                            <span class="rotulo">Ganhos</span>
+                            <strong id="resGanhos">R$ 0,00</strong>
+                        </div>
+                        <div>
+                            <span class="ponto ponto-gasto"></span>
+                            <span class="rotulo">Gastos</span>
+                            <strong id="resGastos">R$ 0,00</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stats">
+                    <div class="hoje-item"><span class="rotulo">Km rodados</span><strong id="resKm">0 km</strong></div>
+                    <div class="hoje-item"><span class="rotulo">Ganho por km</span><strong id="resRsKm">—</strong></div>
+                    <div class="hoje-item"><span class="rotulo">Dias trabalhados</span><strong id="resDias">0</strong></div>
+                    <div class="hoje-item"><span class="rotulo">Lucro médio/dia</span><strong id="resMedia">—</strong></div>
+                </div>
+
+                <div class="bloco grafico-card">
+                    <div class="bloco-cabeca">
+                        <h2>Por dia</h2>
+                        <div class="chips chips-pequenos" id="metricas" role="radiogroup" aria-label="O que mostrar no gráfico">
+                            <button class="chip" data-metrica="lucro" role="radio" aria-checked="true">Lucro</button>
+                            <button class="chip" data-metrica="km" role="radio" aria-checked="false">Km</button>
+                            <button class="chip" data-metrica="rskm" role="radio" aria-checked="false">R$/km</button>
+                        </div>
+                    </div>
+                    <svg class="grafico" id="grafico" viewBox="0 0 340 190" role="img" aria-label="Gráfico por dia"></svg>
+                    <p class="grafico-detalhe" id="graficoDetalhe"></p>
+                </div>
+
+                <div class="bloco">
+                    <div class="bloco-cabeca"><h2>Gastos por categoria</h2></div>
+                    <ul class="lista" id="resCategorias"></ul>
+                </div>
+            </section>
+
             <section class="tela" id="tela-historico">
                 <h2 class="tela-titulo">Histórico</h2>
                 <ul class="lista" id="listaRegistros"></ul>
@@ -127,6 +186,10 @@
             <button class="nav-item ativo" data-ir="inicio">
                 <svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>
                 Início
+            </button>
+            <button class="nav-item" data-ir="resumo">
+                <svg viewBox="0 0 24 24"><path d="M5 20V11M12 20V5M19 20v-6"/></svg>
+                Resumo
             </button>
             <button class="nav-item" data-ir="historico">
                 <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
