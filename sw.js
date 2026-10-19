@@ -1,7 +1,7 @@
 // sw.js — faz o app abrir e funcionar sem internet.
 // Regra: com internet, sempre busca a versão mais nova; sem internet, usa a cópia salva.
 // Ao mudar o app, aumente a VERSAO aqui E o ?v= dos arquivos no index.html (mesmo número).
-const VERSAO = '3';
+const VERSAO = '4';
 const CACHE = 'meu-rendimento-v' + VERSAO;
 
 const ARQUIVOS = [

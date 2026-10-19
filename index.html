@@ -17,16 +17,30 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="style.css?v=3" />
+    <link rel="stylesheet" href="style.css?v=4" />
 </head>
 
 <body>
     <div class="app">
         <header class="topo">
-            <div>
-                <p class="topo-saudacao" id="saudacao">Boa noite</p>
-                <h1 class="topo-titulo">Meu Rendimento</h1>
+            <div class="topo-esq">
+                <div class="avatar-area">
+                    <button class="avatar" id="avatar" type="button" aria-label="Adicionar sua foto" aria-haspopup="true">
+                        <img id="avatarImg" alt="Sua foto" hidden />
+                        <svg id="avatarVazio" viewBox="0 0 24 24"><circle cx="12" cy="9" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>
+                        <span class="avatar-mais" id="avatarMais">+</span>
+                    </button>
+                    <div class="menu-foto" id="menuFoto" hidden>
+                        <button type="button" id="trocarFoto">Trocar foto</button>
+                        <button type="button" id="removerFoto" class="perigo">Remover foto</button>
+                    </div>
+                </div>
+                <div>
+                    <p class="topo-saudacao" id="saudacao">Boa noite</p>
+                    <h1 class="topo-titulo">Meu Rendimento</h1>
+                </div>
             </div>
+            <input type="file" id="fotoInput" accept="image/*" hidden />
             <span class="topo-data" id="dataHoje"></span>
         </header>
 
@@ -105,7 +119,7 @@
                     <ul class="lista" id="ultimosRegistros"></ul>
                 </div>
 
-                <p class="versao">Meu Rendimento · versão 3</p>
+                <p class="versao">Meu Rendimento · versão 4</p>
             </section>
 
             <!-- ===== HISTÓRICO ===== -->
@@ -243,7 +257,7 @@
 
     <div class="aviso" id="aviso" hidden></div>
 
-    <script src="src/script.js?v=3"></script>
+    <script src="src/script.js?v=4"></script>
 </body>
 
 </html>

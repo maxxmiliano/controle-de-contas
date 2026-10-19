@@ -659,6 +659,72 @@ if ('serviceWorker' in navigator) {
   });
 })();
 
+// ===== Foto do perfil (fica só neste celular) =====
+(function () {
+  const botao = document.getElementById('avatar');
+  const img = document.getElementById('avatarImg');
+  const vazioIcone = document.getElementById('avatarVazio');
+  const mais = document.getElementById('avatarMais');
+  const menu = document.getElementById('menuFoto');
+  const entrada = document.getElementById('fotoInput');
+
+  function mostrar(foto) {
+    const tem = typeof foto === 'string' && foto.startsWith('data:image/jpeg;base64,');
+    img.hidden = !tem;
+    vazioIcone.toggleAttribute('hidden', tem); // ícone SVG precisa do atributo, não da propriedade
+    mais.hidden = tem;
+    if (tem) img.src = foto; else img.removeAttribute('src');
+    botao.setAttribute('aria-label', tem ? 'Opções da sua foto' : 'Adicionar sua foto');
+  }
+
+  let foto = null;
+  try { foto = localStorage.getItem('foto'); } catch {}
+  mostrar(foto);
+
+  botao.addEventListener('click', e => {
+    e.stopPropagation();
+    if (img.hidden) entrada.click();
+    else menu.hidden = !menu.hidden;
+  });
+  document.addEventListener('click', e => { if (!menu.hidden && !menu.contains(e.target)) menu.hidden = true; });
+  document.getElementById('trocarFoto').addEventListener('click', () => { menu.hidden = true; entrada.click(); });
+  document.getElementById('removerFoto').addEventListener('click', () => {
+    menu.hidden = true;
+    try { localStorage.removeItem('foto'); } catch {}
+    mostrar(null);
+    mostrarAviso('Foto removida');
+  });
+
+  entrada.addEventListener('change', () => {
+    const arquivo = entrada.files && entrada.files[0];
+    entrada.value = '';
+    if (!arquivo) return;
+    if (!arquivo.type.startsWith('image/')) { mostrarAviso('Escolha uma imagem'); return; }
+
+    // Reduz a foto para 256x256 (recorte quadrado no centro) para ocupar pouco espaço
+    const url = URL.createObjectURL(arquivo);
+    const imagem = new Image();
+    imagem.onload = () => {
+      const lado = Math.min(imagem.naturalWidth, imagem.naturalHeight);
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 256;
+      canvas.getContext('2d').drawImage(imagem,
+        (imagem.naturalWidth - lado) / 2, (imagem.naturalHeight - lado) / 2, lado, lado, 0, 0, 256, 256);
+      URL.revokeObjectURL(url);
+      const dados = canvas.toDataURL('image/jpeg', 0.85);
+      try {
+        localStorage.setItem('foto', dados);
+        mostrar(dados);
+        mostrarAviso('Foto atualizada');
+      } catch {
+        mostrarAviso('Não foi possível salvar a foto');
+      }
+    };
+    imagem.onerror = () => { URL.revokeObjectURL(url); mostrarAviso('Não consegui abrir essa imagem'); };
+    imagem.src = url;
+  });
+})();
+
 // ===== Cabeçalho =====
 const hora = new Date().getHours();
 document.getElementById('saudacao').textContent = hora < 12 ? 'Bom dia' : hora < 18 ? 'Boa tarde' : 'Boa noite';

@@ -48,8 +48,40 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   align-items: flex-end;
   padding: calc(20px + env(safe-area-inset-top)) 4px 18px;
 }
+.topo { position: relative; z-index: 5; }
+.topo-esq { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.avatar-area { position: relative; flex: none; }
+.avatar {
+  position: relative; width: 52px; height: 52px; border-radius: 50%;
+  background: var(--superficie); border: 2px solid var(--destaque);
+  display: grid; place-items: center; color: var(--texto-suave);
+}
+.avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; }
+.avatar img[hidden], .avatar svg[hidden], .avatar-mais[hidden] { display: none; }
+.avatar svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.avatar-mais {
+  position: absolute; right: -2px; bottom: -2px; width: 20px; height: 20px; border-radius: 50%;
+  background: var(--destaque); color: var(--fundo); font-weight: 800; font-size: 0.9rem; line-height: 20px;
+  border: 2px solid var(--fundo);
+}
+.menu-foto {
+  position: absolute; top: 60px; left: 0; z-index: 30; min-width: 170px;
+  background: var(--superficie-2); border: 1px solid var(--borda); border-radius: 14px;
+  padding: 6px; display: grid; box-shadow: 0 10px 30px rgba(0,0,0,.45);
+  animation: aparecer 0.15s ease;
+}
+.menu-foto[hidden] { display: none; }
+.menu-foto button { text-align: left; padding: 11px 12px; border-radius: 10px; font-weight: 700; }
+.menu-foto button:hover, .menu-foto button:focus-visible { background: var(--superficie); }
+.menu-foto .perigo { color: var(--gasto); }
 .topo-saudacao { color: var(--texto-suave); font-size: 0.9rem; font-weight: 600; }
-.topo-titulo { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; }
+.topo-titulo { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; white-space: nowrap; }
+@media (max-width: 380px) {
+  .topo-titulo { font-size: 1.25rem; }
+  .avatar { width: 46px; height: 46px; }
+  .topo-data { padding: 5px 10px; font-size: 0.72rem; }
+}
+@media (max-width: 340px) { .topo-data { display: none; } }
 .topo-data {
   font-size: 0.8rem; font-weight: 700; color: var(--texto-suave);
   background: var(--superficie); border: 1px solid var(--borda);
