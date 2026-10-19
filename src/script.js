@@ -14,6 +14,7 @@ function salvar() {
   try {
     localStorage.setItem('registros', JSON.stringify(registros));
     localStorage.setItem('contas', JSON.stringify(contas));
+    localStorage.setItem('kms', JSON.stringify(kms));
   } catch {
     mostrarAviso('Não foi possível salvar no aparelho');
   }
@@ -24,10 +25,15 @@ function novoId() {
 }
 
 let registros = carregar('registros').map(r => ({ ...r, id: r.id || novoId(), valor: Number(r.valor) || 0 }));
+let kms = carregar('kms').map(k => ({ ...k, id: k.id || novoId(), km: Number(k.km) || 0 }));
 let contas = carregar('contas').map(c => ({ ...c, id: c.id || novoId(), valor: Number(c.valor) || 0, paga: !!c.paga }));
+
+const CATEGORIAS = ['Combustível', 'Peças do carro', 'Manutenção', 'Alimentação', 'Lavagem', 'Outros'];
 
 // ===== Formatação no padrão brasileiro =====
 const moeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+const numero = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 });
+const formatarKm = v => numero.format(v) + ' km';
 const dataCurta = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short' });
 const dataLonga = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
 
@@ -86,18 +92,29 @@ function vazio(lista, mensagem) {
 // ===== Itens =====
 function itemRegistro(r, comAcoes) {
   const li = el('li', 'item');
-  li.append(el('div', 'item-icone ' + r.tipo, r.tipo === 'ganho' ? '+' : '−'));
+  const simbolo = { ganho: '+', gasto: '−', km: 'KM' }[r.tipo];
+  li.append(el('div', 'item-icone ' + r.tipo, simbolo));
+
+  const titulo = r.tipo === 'km'
+    ? 'Km rodados'
+    : r.descricao || r.categoria || (r.tipo === 'ganho' ? 'Ganho' : 'Gasto');
+  const partes = [];
+  if (r.categoria && r.descricao) partes.push(r.categoria);
+  partes.push(r.data ? textoDia(r.data) : 'Sem data');
 
   const texto = el('div', 'item-texto');
-  texto.append(el('p', 'item-titulo', r.descricao || (r.tipo === 'ganho' ? 'Ganho' : 'Gasto')));
-  texto.append(el('p', 'item-sub', r.data ? textoDia(r.data) : 'Sem data'));
+  texto.append(el('p', 'item-titulo', titulo));
+  texto.append(el('p', 'item-sub', partes.join(' · ')));
   li.append(texto);
 
-  li.append(el('span', 'item-valor ' + r.tipo, (r.tipo === 'ganho' ? '+ ' : '− ') + moeda.format(r.valor)));
+  const valor = r.tipo === 'km'
+    ? formatarKm(r.km)
+    : (r.tipo === 'ganho' ? '+ ' : '− ') + moeda.format(r.valor);
+  li.append(el('span', 'item-valor ' + r.tipo, valor));
 
   if (comAcoes) {
     const acoes = el('div', 'item-acoes');
-    acoes.append(iconeBotao('apagar', 'Apagar lançamento', () => apagarRegistro(r.id)));
+    acoes.append(iconeBotao('apagar', r.tipo === 'km' ? 'Apagar km' : 'Apagar lançamento', () => apagarRegistro(r.id)));
     li.append(acoes);
   }
   return li;
@@ -135,7 +152,8 @@ function itemConta(c) {
 // ===== Atualizar a tela =====
 function ordenarRegistros() {
   // mais recentes primeiro; os antigos sem data ficam por último, na ordem em que foram lançados
-  return registros
+  const todos = [...registros, ...kms.map(k => ({ ...k, tipo: 'km' }))];
+  return todos
     .map((r, i) => ({ r, i }))
     .sort((a, b) => (b.r.data || '').localeCompare(a.r.data || '') || b.i - a.i)
     .map(x => x.r);
@@ -155,6 +173,21 @@ function atualizarTela() {
   saldoEl.classList.toggle('negativo', saldo < 0);
   document.getElementById('totalGanhos').textContent = moeda.format(ganhos);
   document.getElementById('totalGastos').textContent = moeda.format(gastos);
+
+  // Resumo de hoje
+  const hoje = hojeISO();
+  let ganhosHoje = 0, gastosHoje = 0;
+  registros.forEach(r => {
+    if (r.data !== hoje) return;
+    if (r.tipo === 'ganho') ganhosHoje += r.valor; else gastosHoje += r.valor;
+  });
+  const kmDoDia = kms.filter(k => k.data === hoje).reduce((soma, k) => soma + k.km, 0);
+  const lucroHoje = ganhosHoje - gastosHoje;
+  const lucroEl = document.getElementById('lucroHoje');
+  lucroEl.textContent = moeda.format(lucroHoje);
+  lucroEl.classList.toggle('negativo', lucroHoje < 0);
+  document.getElementById('kmHoje').textContent = formatarKm(kmDoDia);
+  document.getElementById('rsKmHoje').textContent = kmDoDia > 0 ? moeda.format(ganhosHoje / kmDoDia) : '—';
 
   const ordenados = ordenarRegistros();
 
@@ -198,6 +231,7 @@ function atualizarTela() {
 function apagarRegistro(id) {
   if (!confirm('Apagar este lançamento?')) return;
   registros = registros.filter(r => r.id !== id);
+  kms = kms.filter(k => k.id !== id);
   atualizarTela();
   mostrarAviso('Lançamento apagado');
 }
@@ -224,11 +258,30 @@ const campoValor = document.getElementById('campoValor');
 const campoNome = document.getElementById('campoNome');
 const campoData = document.getElementById('campoData');
 const erroForm = document.getElementById('erroForm');
+const grupoNome = document.getElementById('grupoNome');
+const grupoCategoria = document.getElementById('grupoCategoria');
+const chips = document.getElementById('chipsCategoria');
 let modo = 'ganho';
+let categoria = '';
+
+CATEGORIAS.forEach(nome => {
+  const c = el('button', 'chip', nome);
+  c.type = 'button';
+  c.setAttribute('role', 'radio');
+  c.setAttribute('aria-checked', 'false');
+  c.addEventListener('click', () => escolherCategoria(nome));
+  chips.append(c);
+});
+
+function escolherCategoria(nome) {
+  categoria = nome;
+  chips.querySelectorAll('.chip').forEach(c => c.setAttribute('aria-checked', String(c.textContent === nome)));
+}
 
 const configs = {
   ganho: { titulo: 'Novo ganho', nome: 'Descrição (opcional)', exemplo: 'Ex: corridas da manhã', data: 'Data', botao: 'ganho' },
-  gasto: { titulo: 'Novo gasto', nome: 'Descrição', exemplo: 'Ex: combustível', data: 'Data', botao: 'gasto' },
+  gasto: { titulo: 'Novo gasto', nome: 'Descrição (opcional)', exemplo: 'Ex: pastilha de freio', data: 'Data', botao: 'gasto' },
+  km: { titulo: 'Km rodados', nome: '', exemplo: '', data: 'Dia', botao: 'km', prefixo: 'km' },
   conta: { titulo: 'Nova conta', nome: 'Nome da conta', exemplo: 'Ex: aluguel do carro', data: 'Vencimento', botao: '' }
 };
 
@@ -239,6 +292,12 @@ function abrirFolha(tipo) {
   document.getElementById('rotuloNome').textContent = cfg.nome;
   document.getElementById('rotuloData').textContent = cfg.data;
   campoNome.placeholder = cfg.exemplo;
+  document.getElementById('prefixoValor').textContent = cfg.prefixo || 'R$';
+  campoValor.step = tipo === 'km' ? '0.1' : '0.01';
+  campoValor.placeholder = tipo === 'km' ? '0' : '0,00';
+  grupoNome.hidden = tipo === 'km';
+  grupoCategoria.hidden = tipo !== 'gasto';
+  escolherCategoria('');
   document.getElementById('salvar').className = 'botao-principal ' + cfg.botao;
   folha.reset();
   campoData.value = hojeISO();
@@ -260,12 +319,19 @@ folha.addEventListener('submit', e => {
   const data = campoData.value;
 
   let erro = '';
-  if (!valor || valor <= 0) erro = 'Digite um valor maior que zero.';
-  else if (modo !== 'ganho' && !nome) erro = modo === 'conta' ? 'Dê um nome para a conta.' : 'Descreva o gasto.';
+  if (!valor || valor <= 0) erro = modo === 'km' ? 'Digite quantos km rodou.' : 'Digite um valor maior que zero.';
+  else if (modo === 'gasto' && !categoria) erro = 'Escolha a categoria do gasto.';
+  else if (modo === 'conta' && !nome) erro = 'Dê um nome para a conta.';
   else if (!data) erro = 'Escolha a data.';
   if (erro) { erroForm.textContent = erro; erroForm.hidden = false; return; }
 
-  if (modo === 'conta') {
+  if (modo === 'km') {
+    kms.push({ id: novoId(), km: valor, data });
+    mostrarAviso('Km registrados');
+  } else if (modo === 'gasto') {
+    registros.push({ id: novoId(), tipo: 'gasto', valor, categoria, descricao: nome, data });
+    mostrarAviso('Gasto registrado');
+  } else if (modo === 'conta') {
     contas.push({ id: novoId(), nome, valor, vencimento: data, paga: false });
     mostrarAviso('Conta adicionada');
   } else {

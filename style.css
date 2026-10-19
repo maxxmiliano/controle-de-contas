@@ -13,6 +13,8 @@
   --alerta: #F5B544;
   --alerta-fundo: rgba(245, 181, 68, 0.14);
   --destaque: #F5B544;
+  --km: #6AA8FF;
+  --km-fundo: rgba(106, 168, 255, 0.12);
   --raio: 18px;
   --nav-altura: 72px;
   color-scheme: dark;
@@ -86,11 +88,24 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .ponto-ganho { background: var(--ganho); }
 .ponto-gasto { background: var(--gasto); }
 
+/* ===== Resumo de hoje ===== */
+.hoje {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px;
+}
+.hoje-item {
+  background: var(--superficie); border: 1px solid var(--borda); border-radius: 16px;
+  padding: 12px; display: grid; gap: 4px; min-width: 0;
+}
+.hoje-item .rotulo { font-size: 0.72rem; white-space: nowrap; }
+.hoje-item strong { font-size: 1rem; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hoje-item strong.negativo { color: var(--gasto); }
+
 /* ===== Botões de ação ===== */
-.acoes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0 8px; }
+.acoes { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 12px 0 8px; }
 .acao {
   display: flex; align-items: center; justify-content: center; gap: 10px;
-  padding: 16px; border-radius: var(--raio); font-weight: 800; font-size: 1rem;
+  flex-direction: column; gap: 6px;
+  padding: 14px 8px; border-radius: var(--raio); font-weight: 800; font-size: 0.95rem;
   transition: transform 0.1s ease;
 }
 .acao:active { transform: scale(0.97); }
@@ -102,6 +117,9 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .acao-ganho .acao-icone { background: var(--ganho); color: var(--fundo); }
 .acao-gasto { background: var(--gasto-fundo); color: var(--gasto); }
 .acao-gasto .acao-icone { background: var(--gasto); color: var(--fundo); }
+.acao-km { background: var(--km-fundo); color: var(--km); }
+.acao-km .acao-icone { background: var(--km); color: var(--fundo); }
+.acao-icone svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; }
 
 /* ===== Blocos e listas ===== */
 .bloco { margin-top: 22px; }
@@ -122,6 +140,8 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 }
 .item-icone.ganho { background: var(--ganho-fundo); color: var(--ganho); }
 .item-icone.gasto { background: var(--gasto-fundo); color: var(--gasto); }
+.item-icone.km { background: var(--km-fundo); color: var(--km); font-size: 0.75rem; }
+.item-valor.km { color: var(--km); }
 .item-icone.conta { background: var(--superficie-2); color: var(--texto-suave); }
 .item-texto { flex: 1; min-width: 0; }
 .item-titulo { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -190,6 +210,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .botao-principal { background: var(--destaque); color: var(--fundo); }
 .botao-principal.ganho { background: var(--ganho); }
 .botao-principal.gasto { background: var(--gasto); }
+.botao-principal.km { background: var(--km); }
 .botao-secundario { background: var(--superficie-2); }
 
 /* ===== Folha de formulário ===== */
@@ -232,6 +253,12 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   border: 0; background: none; padding: 10px 0; font-size: 1.8rem; font-weight: 800;
   font-variant-numeric: tabular-nums;
 }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  padding: 9px 14px; border-radius: 999px; font-weight: 700; font-size: 0.88rem;
+  background: var(--fundo); border: 1px solid var(--borda); color: var(--texto-suave);
+}
+.chip[aria-checked="true"] { background: var(--gasto-fundo); border-color: var(--gasto); color: var(--gasto); }
 .folha-botoes { display: flex; gap: 10px; margin-top: 4px; }
 .valor-entrada input::-webkit-outer-spin-button,
 .valor-entrada input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }

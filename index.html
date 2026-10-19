@@ -42,12 +42,32 @@
                     </div>
                 </div>
 
+                <div class="hoje">
+                    <div class="hoje-item">
+                        <span class="rotulo">Lucro hoje</span>
+                        <strong id="lucroHoje">R$ 0,00</strong>
+                    </div>
+                    <div class="hoje-item">
+                        <span class="rotulo">Km hoje</span>
+                        <strong id="kmHoje">0 km</strong>
+                    </div>
+                    <div class="hoje-item">
+                        <span class="rotulo">Ganho por km</span>
+                        <strong id="rsKmHoje">—</strong>
+                    </div>
+                </div>
+
                 <div class="acoes">
                     <button class="acao acao-ganho" data-abrir="ganho">
                         <span class="acao-icone">+</span> Ganho
                     </button>
                     <button class="acao acao-gasto" data-abrir="gasto">
                         <span class="acao-icone">−</span> Gasto
+                    </button>
+                    <button class="acao acao-km" data-abrir="km">
+                        <span class="acao-icone">
+                            <svg viewBox="0 0 24 24"><path d="M12 13l4-4"/><path d="M4 18a8 8 0 1 1 16 0"/></svg>
+                        </span> Km
                     </button>
                 </div>
 
@@ -110,10 +130,15 @@
         <label class="campo campo-valor">
             <span>Valor</span>
             <div class="valor-entrada">
-                <em>R$</em>
+                <em id="prefixoValor">R$</em>
                 <input type="number" id="campoValor" inputmode="decimal" step="0.01" min="0" placeholder="0,00" required />
             </div>
         </label>
+
+        <div class="campo" id="grupoCategoria" hidden>
+            <span>Categoria</span>
+            <div class="chips" id="chipsCategoria" role="radiogroup" aria-label="Categoria do gasto"></div>
+        </div>
 
         <label class="campo" id="grupoNome">
             <span id="rotuloNome">Descrição</span>
