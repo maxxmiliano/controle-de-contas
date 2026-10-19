@@ -370,6 +370,56 @@ function mostrarAviso(texto) {
   timerAviso = setTimeout(() => { a.hidden = true; }, 2200);
 }
 
+// ===== Instalação como app =====
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+
+(function () {
+  const caixa = document.getElementById('instalar');
+  const botao = document.getElementById('instalarBotao');
+  const dica = document.getElementById('instalarDica');
+  const jaInstalado = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  let dispensado = false;
+  try { dispensado = localStorage.getItem('instalarDispensado') === '1'; } catch {}
+  if (jaInstalado || dispensado) return;
+
+  const ehIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  let pedidoInstalacao = null;
+
+  if (ehIOS) {
+    // iPhone não tem botão de instalar automático: mostramos o passo a passo
+    botao.textContent = 'Como?';
+    botao.addEventListener('click', () => {
+      dica.textContent = 'No Safari, toque em Compartilhar e depois em "Adicionar à Tela de Início".';
+      botao.hidden = true;
+    });
+    caixa.hidden = false;
+  }
+
+  // Android/Chrome avisa quando o app pode ser instalado
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    pedidoInstalacao = e;
+    caixa.hidden = false;
+  });
+
+  botao.addEventListener('click', async () => {
+    if (!pedidoInstalacao) return;
+    pedidoInstalacao.prompt();
+    await pedidoInstalacao.userChoice.catch(() => {});
+    pedidoInstalacao = null;
+    caixa.hidden = true;
+  });
+
+  window.addEventListener('appinstalled', () => { caixa.hidden = true; });
+
+  document.getElementById('instalarFechar').addEventListener('click', () => {
+    caixa.hidden = true;
+    try { localStorage.setItem('instalarDispensado', '1'); } catch {}
+  });
+})();
+
 // ===== Cabeçalho =====
 const hora = new Date().getHours();
 document.getElementById('saudacao').textContent = hora < 12 ? 'Bom dia' : hora < 18 ? 'Boa tarde' : 'Boa noite';

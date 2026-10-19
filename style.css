@@ -63,6 +63,19 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 
 @keyframes aparecer { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
+/* ===== Aviso de instalação ===== */
+.instalar {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 12px;
+  background: var(--superficie); border: 1px solid var(--borda); border-radius: 18px;
+  padding: 12px 8px 12px 12px;
+}
+.instalar[hidden] { display: none; }
+.instalar img { border-radius: 11px; flex: none; }
+.instalar-texto { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.instalar-texto strong { font-weight: 800; font-size: 0.95rem; }
+.instalar-texto span { color: var(--texto-suave); font-size: 0.8rem; font-weight: 600; }
+.instalar-fechar { width: 30px; height: 30px; color: var(--texto-suave); font-size: 1.3rem; flex: none; }
+
 /* ===== Cartão de saldo ===== */
 .card-saldo {
   background:
